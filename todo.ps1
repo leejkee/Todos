@@ -3,6 +3,7 @@
 # Commands:
 #   push   - Stage all, commit with date, push to remote
 #   today  - Open today's todo file (create if not exists)
+#   help   - Show this help
 
 param(
     [Parameter(Position = 0)]
@@ -11,7 +12,14 @@ param(
 )
 
 $TodoDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$TodayFile = Join-Path $TodoDir "$(Get-Date -Format 'yyyy-MM-dd').md"
+$TodosSubDir = Join-Path $TodoDir "todos"
+
+# Ensure todos subdirectory exists
+if (-not (Test-Path $TodosSubDir)) {
+    New-Item -ItemType Directory -Path $TodosSubDir -Force | Out-Null
+}
+
+$TodayFile = Join-Path $TodosSubDir "$(Get-Date -Format 'yyyy-MM-dd').md"
 $DayOfWeek = (Get-Date).ToString("ddd")
 
 function Invoke-TodoPush {
@@ -19,7 +27,6 @@ function Invoke-TodoPush {
     Set-Location $TodoDir
     git add -A
 
-    # Check if there are staged changes
     $status = git status --porcelain
     if (-not $status) {
         Write-Host "⚠️  Nothing to commit. Working tree is clean." -ForegroundColor Yellow
@@ -31,9 +38,14 @@ function Invoke-TodoPush {
     git commit -m $dateMsg
 
     Write-Host "🚀 Pushing to remote..." -ForegroundColor Cyan
-    git push
 
-    if ($LASTEXITCODE -eq 0) {
+    # Use Start-Process -NoNewWindow so the child process inherits the console.
+    # This allows SSH to prompt for the key passphrase interactively in the
+    # current terminal, instead of failing silently. Equivalent to the
+    # subprocess.run(..., shell=True) pattern in Python.
+    $proc = Start-Process -FilePath "git" -ArgumentList "push" -NoNewWindow -Wait -PassThru
+
+    if ($proc.ExitCode -eq 0) {
         Write-Host "✅ Done! Today's todos pushed successfully." -ForegroundColor Green
     }
     else {
@@ -76,8 +88,9 @@ function Invoke-TodoHelp {
   Commands:
     todo push    Stage all, commit with date, push to remote
     todo today   Open today's markdown file (auto-create if needed)
+    todo help    Show this help
 
-  Files are stored in: $TodoDir
+  Files are stored in: $TodosSubDir
 
 "@ -ForegroundColor Green
 }
