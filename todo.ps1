@@ -43,7 +43,7 @@ function Invoke-TodoPush {
     # This allows SSH to prompt for the key passphrase interactively in the
     # current terminal, instead of failing silently. Equivalent to the
     # subprocess.run(..., shell=True) pattern in Python.
-    $proc = Start-Process -FilePath "git" -ArgumentList "push" -NoNewWindow -Wait -PassThru
+    $proc = Start-Process -FilePath "git" -ArgumentList "push" "origin", "main" -NoNewWindow -Wait -PassThru
 
     if ($proc.ExitCode -eq 0) {
         Write-Host "✅ Done! Today's todos pushed successfully." -ForegroundColor Green
