@@ -76,8 +76,8 @@ function Invoke-TodoToday {
 "@ | Out-File -FilePath $TodayFile -Encoding UTF8
     }
 
-    Write-Host "📝 Opening today's todo: $(Split-Path -Leaf $TodayFile)" -ForegroundColor Cyan
-    Start-Process $TodayFile
+    Write-Host "📝 Opening today's todo with nvim: $(Split-Path -Leaf $TodayFile)" -ForegroundColor Cyan
+    nvim $TodayFile
 }
 
 function Invoke-TodoHelp {
